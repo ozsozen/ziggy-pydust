@@ -24,7 +24,7 @@ pub fn PyLong(comptime root: type) type {
         obj: py.PyObject(root),
 
         const Self = @This();
-        pub usingnamespace PyObjectMixin(root, "int", "PyLong", Self);
+        pub const from = PyObjectMixin(root, "int", "PyLong", Self);
 
         pub fn create(value: anytype) !Self {
             if (@TypeOf(value) == comptime_int) {

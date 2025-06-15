@@ -12,9 +12,9 @@
 
 const std = @import("std");
 const py = @import("../pydust.zig");
+const PyObjectMixin = @import("./obj.zig").PyObjectMixin;
 const ffi = py.ffi;
 const PyError = @import("../errors.zig").PyError;
-const PyObjectMixin = @import("./obj.zig").PyObjectMixin;
 const State = @import("../discovery.zig").State;
 
 pub fn PyMemoryView(comptime root: type) type {
@@ -27,7 +27,7 @@ pub fn PyMemoryView(comptime root: type) type {
         };
 
         const Self = @This();
-        pub usingnamespace PyObjectMixin(root, "memoryview", "PyMemoryView", Self);
+        pub const from = PyObjectMixin(root, "memoryview", "PyMemoryView", Self);
 
         pub fn fromSlice(slice: anytype) !Self {
             const sliceType = Slice(@TypeOf(slice));

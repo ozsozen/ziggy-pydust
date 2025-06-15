@@ -13,7 +13,6 @@
 const std = @import("std");
 const py = @import("../pydust.zig");
 const PyObjectMixin = @import("./obj.zig").PyObjectMixin;
-
 const ffi = py.ffi;
 const PyObject = @import("obj.zig").PyObject;
 const PyError = @import("../errors.zig").PyError;
@@ -24,7 +23,7 @@ pub fn PyString(comptime root: type) type {
         obj: PyObject(root),
 
         const Self = @This();
-        pub usingnamespace PyObjectMixin(root, "str", "PyUnicode", Self);
+        pub const from = PyObjectMixin(root, "str", "PyUnicode", Self);
 
         pub fn create(value: []const u8) !Self {
             const unicode = ffi.PyUnicode_FromStringAndSize(value.ptr, @intCast(value.len)) orelse return PyError.PyRaised;
@@ -39,17 +38,17 @@ pub fn PyString(comptime root: type) type {
 
         /// Append other to self.
         ///
-        /// Warning: a reference to self is stolen. Use concat, or self.incref(), if you don't own a reference to self.
+        /// Warning: a reference to self is stolen. Use concat, or self.obj.incref(), if you don't own a reference to self.
         pub fn append(self: Self, other: Self) !Self {
             return self.appendObj(other.obj);
         }
 
         /// Append the slice to self.
         ///
-        /// Warning: a reference to self is stolen. Use concat, or self.incref(), if you don't own a reference to self.
+        /// Warning: a reference to self is stolen. Use concat, or self.obj.incref(), if you don't own a reference to self.
         pub fn appendSlice(self: Self, str: []const u8) !Self {
             const other = try create(str);
-            defer other.decref();
+            defer other.obj.decref();
             return self.appendObj(other.obj);
         }
 
@@ -60,7 +59,7 @@ pub fn PyString(comptime root: type) type {
             var self_ptr: ?*ffi.PyObject = self.obj.py;
             ffi.PyUnicode_Append(&self_ptr, other.py);
             if (self_ptr) |ptr| {
-                return Self.unchecked(.{ .py = ptr });
+                return Self.from.unchecked(.{ .py = ptr });
             } else {
                 // If set to null, then it failed.
                 return PyError.PyRaised;
@@ -70,13 +69,13 @@ pub fn PyString(comptime root: type) type {
         /// Concat other to self. Returns a new reference.
         pub fn concat(self: Self, other: Self) !Self {
             const result = ffi.PyUnicode_Concat(self.obj.py, other.obj.py) orelse return PyError.PyRaised;
-            return Self.unchecked(.{ .py = result });
+            return Self.from.unchecked(.{ .py = result });
         }
 
         /// Concat other to self. Returns a new reference.
         pub fn concatSlice(self: Self, other: []const u8) !Self {
             const otherString = try create(other);
-            defer otherString.decref();
+            defer otherString.obj.decref();
 
             return concat(self, otherString);
         }

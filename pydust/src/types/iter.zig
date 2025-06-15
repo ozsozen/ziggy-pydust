@@ -24,7 +24,7 @@ pub fn PyIter(comptime root: type) type {
         obj: py.PyObject(root),
 
         const Self = @This();
-        pub usingnamespace PyObjectMixin(root, "iterator", "PyIter", Self);
+        const from = PyObjectMixin(root, "iterator", "PyIter", Self);
 
         pub fn next(self: Self, comptime T: type) !?T {
             if (ffi.PyIter_Next(self.obj.py)) |result| {

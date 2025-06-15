@@ -12,7 +12,7 @@
 
 const std = @import("std");
 const State = @import("discovery.zig").State;
-const ffi = @import("ffi.zig");
+const ffi = @import("ffi");
 const py = @import("pydust.zig");
 const PyError = py.PyError;
 const Attributes = @import("attributes.zig").Attributes;
@@ -147,7 +147,7 @@ fn Slots(comptime root: type, comptime definition: type) type {
                 const types = try py.import(root, "types");
                 defer types.decref();
                 const pyname = try py.PyString(root).create(name);
-                defer pyname.decref();
+                defer pyname.obj.decref();
                 const spec = try types.call(py.PyObject(root), "SimpleNamespace", .{}, .{ .name = pyname });
                 defer spec.decref();
 

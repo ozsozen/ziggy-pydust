@@ -13,7 +13,6 @@
 const std = @import("std");
 const py = @import("../pydust.zig");
 const PyObjectMixin = @import("./obj.zig").PyObjectMixin;
-
 const ffi = py.ffi;
 const PyError = @import("../errors.zig").PyError;
 const State = @import("../discovery.zig").State;
@@ -25,7 +24,7 @@ pub fn PyFloat(comptime root: type) type {
         obj: py.PyObject(root),
 
         const Self = @This();
-        pub usingnamespace PyObjectMixin(root, "float", "PyFloat", Self);
+        pub const from = PyObjectMixin(root, "float", "PyFloat", Self);
 
         pub fn create(value: anytype) !Self {
             const pyfloat = ffi.PyFloat_FromDouble(@floatCast(value)) orelse return PyError.PyRaised;

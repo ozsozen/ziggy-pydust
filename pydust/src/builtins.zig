@@ -18,7 +18,7 @@ const std = @import("std");
 const py = @import("./pydust.zig");
 const pytypes = @import("./pytypes.zig");
 const State = @import("./discovery.zig").State;
-const ffi = @import("./ffi.zig");
+const ffi = @import("ffi");
 const PyError = @import("./errors.zig").PyError;
 
 /// Zig enum for python richcompare op int.
@@ -99,14 +99,14 @@ pub fn call(comptime root: type, comptime ReturnType: type, object: anytype, arg
     var argsPy = try if (@typeInfo(@TypeOf(args)) == .optional and args == null)
         py.PyTuple(root).new(0)
     else
-        py.PyTuple(root).checked(try py.create(root, args));
+        py.PyTuple(root).from.checked(try py.create(root, args));
 
-    defer argsPy.decref();
+    defer argsPy.obj.decref();
 
     var kwargsPy: ?py.PyDict(root) = null;
     defer {
         if (kwargsPy) |kwpy| {
-            kwpy.decref();
+            kwpy.obj.decref();
         }
     }
     if (!(@typeInfo(@TypeOf(kwargs)) == .optional and kwargs == null)) {
@@ -116,7 +116,7 @@ pub fn call(comptime root: type, comptime ReturnType: type, object: anytype, arg
         if (try py.len(root, kwobj) == 0) {
             kwobj.decref();
         } else {
-            kwargsPy = try py.PyDict(root).checked(kwobj);
+            kwargsPy = try py.PyDict(root).from.checked(kwobj);
         }
     }
 
@@ -180,7 +180,7 @@ pub fn import(comptime root: type, module_name: [:0]const u8) !py.PyObject(root)
 /// Allocate a Pydust class, but does not initialize the memory.
 pub fn alloc(comptime root: type, comptime Cls: type) PyError!*Cls {
     const pytype = try self(root, Cls);
-    defer pytype.decref();
+    defer pytype.obj.decref();
 
     // Alloc the class
     // NOTE(ngates): we currently don't allow users to override tp_alloc, therefore we can shortcut
@@ -209,7 +209,7 @@ pub fn isinstance(comptime root: type, object: anytype, cls: anytype) !bool {
 /// Return an iterator for the given object if it has one. Equivalent to iter(obj) in Python.
 pub fn iter(comptime root: type, object: anytype) !py.PyIter(root) {
     const iterator = ffi.PyObject_GetIter(py.object(root, object).py) orelse return PyError.PyRaised;
-    return py.PyIter(root).unchecked(.{ .py = iterator });
+    return py.PyIter(root).from.unchecked(.{ .py = iterator });
 }
 
 /// Get the length of the given object. Equivalent to len(obj) in Python.
@@ -225,15 +225,15 @@ pub fn moduleState(comptime root: type, comptime Module: type) !*Module {
         @compileError("Not a module definition: " ++ Module);
     }
 
-    const mod = py.PyModule.unchecked(try lift(root, Module));
-    defer mod.decref();
+    const mod = py.PyModule(root).from.unchecked(try lift(root, Module));
+    defer mod.obj.decref();
 
     return mod.getState(Module);
 }
 
 /// Return the next item of an iterator. Equivalent to next(obj) in Python.
-pub fn next(comptime T: type, iterator: anytype) !?T {
-    const pyiter = try py.PyIter.checked(iterator);
+pub fn next(comptime root: type, comptime T: type, iterator: anytype) !?T {
+    const pyiter = try py.PyIter(root).from.checked(iterator);
     return try pyiter.next(T);
 }
 
@@ -253,13 +253,13 @@ pub fn refcnt(comptime root: type, object: anytype) isize {
 /// Compute a string representation of object - using str(o).
 pub fn str(comptime root: type, object: anytype) !py.PyString(root) {
     const pyobj = py.object(root, object);
-    return py.PyString(root).unchecked(.{ .py = ffi.PyObject_Str(pyobj.py) orelse return PyError.PyRaised });
+    return py.PyString(root).from.unchecked(.{ .py = ffi.PyObject_Str(pyobj.py) orelse return PyError.PyRaised });
 }
 
 /// Compute a string representation of object - using repr(o).
 pub fn repr(comptime root: type, object: anytype) !py.PyString(root) {
     const pyobj = py.object(root, object);
-    return py.PyString(root).unchecked(.{ .py = ffi.PyObject_Repr(pyobj.py) orelse return PyError.PyRaised });
+    return py.PyString(root).from.unchecked(.{ .py = ffi.PyObject_Repr(pyobj.py) orelse return PyError.PyRaised });
 }
 
 /// Returns the PyType object representing the given Pydust class.
@@ -267,7 +267,7 @@ pub fn self(comptime root: type, comptime Class: type) !py.PyType(root) {
     if (State.getDefinition(root, Class).type != .class) {
         @compileError("Not a class definition: " ++ Class);
     }
-    return py.PyType(root).unchecked(try lift(root, Class));
+    return py.PyType(root).from.unchecked(try lift(root, Class));
 }
 
 /// The equivalent of Python's super() builtin. Returns a PyObject.
@@ -286,7 +286,7 @@ pub fn super(comptime root: type, comptime Super: type, selfInstance: anytype) !
 
 pub fn tuple(comptime root: type, object: anytype) !py.PyTuple(root) {
     const pytuple = ffi.PySequence_Tuple(py.object(root, object).py) orelse return PyError.PyRaised;
-    return py.PyTuple(root).unchecked(.{ .py = pytuple });
+    return py.PyTuple(root).from.unchecked(.{ .py = pytuple });
 }
 
 /// Return the PyType object for a given Python object.

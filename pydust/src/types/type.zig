@@ -25,16 +25,16 @@ pub fn PyType(comptime root: type) type {
         obj: py.PyObject(root),
 
         const Self = @This();
-        pub usingnamespace PyObjectMixin(root, "type", "PyType", Self);
+        pub const from = PyObjectMixin(root, "type", "PyType", Self);
 
         pub fn name(self: Self) !py.PyString(root) {
-            return py.PyString(root).unchecked(.{
+            return py.PyString(root).from.unchecked(.{
                 .py = ffi.PyType_GetName(typePtr(self)) orelse return PyError.PyRaised,
             });
         }
 
         pub fn qualifiedName(self: Self) !py.PyString(root) {
-            return py.PyString(root).unchecked(.{
+            return py.PyString(root).from.unchecked(.{
                 .py = ffi.PyType_GetQualName(typePtr(self)) orelse return PyError.PyRaised,
             });
         }

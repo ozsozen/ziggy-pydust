@@ -12,8 +12,8 @@
 
 const std = @import("std");
 const py = @import("../pydust.zig");
-const ffi = py.ffi;
 const PyObjectMixin = @import("./obj.zig").PyObjectMixin;
+const ffi = py.ffi;
 const PyError = @import("../errors.zig").PyError;
 const State = @import("../discovery.zig").State;
 
@@ -22,7 +22,7 @@ pub fn PyBytes(comptime root: type) type {
         obj: py.PyObject(root),
 
         const Self = @This();
-        pub usingnamespace PyObjectMixin(root, "bytes", "PyBytes", Self);
+        pub const from = PyObjectMixin(root, "bytes", "PyBytes", Self);
 
         pub fn create(value: []const u8) !Self {
             const bytes = ffi.PyBytes_FromStringAndSize(value.ptr, @intCast(value.len)) orelse return PyError.PyRaised;

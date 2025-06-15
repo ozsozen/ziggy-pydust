@@ -23,7 +23,7 @@ pub fn PySlice(comptime root: type) type {
         obj: py.PyObject(root),
 
         const Self = @This();
-        pub usingnamespace PyObjectMixin(root, "slice", "PySlice", Self);
+        pub const from = PyObjectMixin(root, "slice", "PySlice", Self);
 
         pub fn create(start: anytype, stop: anytype, step: anytype) !Self {
             // TODO(ngates): think about how to improve comptime optional handling?

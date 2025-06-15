@@ -18,7 +18,6 @@ const PyLong = @import("long.zig").PyLong;
 const PyFloat = @import("float.zig").PyFloat;
 const PyObject = @import("obj.zig").PyObject;
 const PyError = @import("../errors.zig").PyError;
-const seq = @import("./sequence.zig");
 const State = @import("../discovery.zig").State;
 
 pub fn PyTuple(comptime root: type) type {
@@ -26,8 +25,7 @@ pub fn PyTuple(comptime root: type) type {
         obj: PyObject(root),
 
         const Self = @This();
-        pub usingnamespace PyObjectMixin(root, "tuple", "PyTuple", Self);
-        pub usingnamespace seq.SequenceMixin(root, Self);
+        pub const from = PyObjectMixin(root, "tuple", "PyTuple", Self);
 
         /// Construct a PyTuple from the given Zig tuple.
         pub fn create(values: anytype) !Self {
@@ -99,6 +97,18 @@ pub fn PyTuple(comptime root: type) type {
             // PyTuple_SetItem steals a reference to value. We want the default behaviour not to do that.
             // See setOwnedItem for an implementation that does steal.
             value.incref();
+        }
+
+        pub fn contains(self: Self, value: anytype) !bool {
+            const result = ffi.PySequence_Contains(self.obj.py, py.object(root, value).py);
+            if (result < 0) return PyError.PyRaised;
+            return result == 1;
+        }
+
+        pub fn index(self: Self, value: anytype) !usize {
+            const idx = ffi.PySequence_Index(self.obj.py, py.object(root, value).py);
+            if (idx < 0) return PyError.PyRaised;
+            return @intCast(idx);
         }
     };
 }

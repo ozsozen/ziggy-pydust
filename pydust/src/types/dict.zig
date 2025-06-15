@@ -23,7 +23,7 @@ pub fn PyDict(comptime root: type) type {
         obj: py.PyObject(root),
 
         const Self = @This();
-        pub usingnamespace PyObjectMixin(root, "dict", "PyDict", Self);
+        pub const from = PyObjectMixin(root, "dict", "PyDict", Self);
 
         /// Create a dictionary from a Zig object
         pub fn create(value: anytype) !Self {
@@ -58,13 +58,13 @@ pub fn PyDict(comptime root: type) type {
         /// Return a new empty dictionary.
         pub fn new() !Self {
             const dict = ffi.PyDict_New() orelse return PyError.PyRaised;
-            return Self.unchecked(.{ .py = dict });
+            return Self.from.unchecked(.{ .py = dict });
         }
 
         /// Return a new dictionary that contains the same key-value pairs as p.
         pub fn copy(self: Self) !Self {
             const dict = ffi.PyDict_Copy(self.obj.py) orelse return PyError.PyRaised;
-            return Self.unchecked(.{ .py = dict });
+            return Self.from.unchecked(.{ .py = dict });
         }
 
         /// Empty an existing dictionary of all key-value pairs.

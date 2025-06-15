@@ -13,7 +13,7 @@
 const std = @import("std");
 const Allocator = @import("std").mem.Allocator;
 const mem = @import("../mem.zig");
-const ffi = @import("../ffi.zig");
+const ffi = @import("ffi");
 const py = @import("../pydust.zig");
 const PyObjectMixin = @import("./obj.zig").PyObjectMixin;
 const pytypes = @import("../pytypes.zig");
@@ -27,7 +27,7 @@ pub fn PyModule(comptime root: type) type {
         obj: py.PyObject(root),
 
         const Self = @This();
-        pub usingnamespace PyObjectMixin(root, "module", "PyModule", Self);
+        pub const from = PyObjectMixin(root, "module", "PyModule", Self);
 
         pub fn import(name: [:0]const u8) !Self {
             return .{ .obj = .{ .py = ffi.PyImport_ImportModule(name) orelse return PyError.PyRaised } };

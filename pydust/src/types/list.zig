@@ -13,7 +13,6 @@
 const std = @import("std");
 const py = @import("../pydust.zig");
 const PyObjectMixin = @import("./obj.zig").PyObjectMixin;
-
 const ffi = py.ffi;
 const PyObject = py.PyObject;
 const PyLong = py.PyLong;
@@ -24,10 +23,10 @@ const State = @import("../discovery.zig").State;
 /// See: https://docs.python.org/3/c-api/list.html
 pub fn PyList(comptime root: type) type {
     return extern struct {
-        obj: py.PyObject(root),
+        obj: PyObject(root),
 
         const Self = @This();
-        pub usingnamespace PyObjectMixin(root, "list", "PyList", Self);
+        pub const from = PyObjectMixin(root, "list", "PyList", Self);
 
         pub fn new(size: usize) !Self {
             const list = ffi.PyList_New(@intCast(size)) orelse return PyError.PyRaised;
@@ -105,7 +104,7 @@ pub fn PyList(comptime root: type) type {
 
         pub fn toTuple(self: Self) !py.PyTuple(root) {
             const pytuple = ffi.PyList_AsTuple(self.obj.py) orelse return PyError.PyRaised;
-            return py.PyTuple(root).unchecked(.{ .py = pytuple });
+            return py.PyTuple(root).from.unchecked(.{ .py = pytuple });
         }
     };
 }

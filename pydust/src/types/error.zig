@@ -12,7 +12,7 @@
 
 const builtin = @import("builtin");
 const std = @import("std");
-const ffi = @import("../ffi.zig");
+const ffi = @import("ffi");
 const py = @import("../pydust.zig");
 const PyError = @import("../errors.zig").PyError;
 const State = @import("../discovery.zig").State;
@@ -305,7 +305,7 @@ fn PyExc(comptime root: type, comptime name: [:0]const u8) type {
 
                     // Import the compiled code as a module and invoke the failing function
                     const fake_module = try py.PyModule(root).fromCode(code, line_info.file_name, symbol_info.compile_unit_name);
-                    defer fake_module.decref();
+                    defer fake_module.obj.decref();
 
                     _ = fake_module.obj.call(void, symbol_info.name, .{}, .{}) catch null;
 
