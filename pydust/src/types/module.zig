@@ -24,10 +24,10 @@ const PyError = @import("../errors.zig").PyError;
 
 pub fn PyModule(comptime root: type) type {
     return extern struct {
-        obj: py.PyObject(root),
+        obj: py.PyObject,
 
         const Self = @This();
-        pub const from = PyObjectMixin(root, "module", "PyModule", Self);
+        pub const from = PyObjectMixin("module", "PyModule", Self);
 
         pub fn import(name: [:0]const u8) !Self {
             return .{ .obj = .{ .py = ffi.PyImport_ImportModule(name) orelse return PyError.PyRaised } };
@@ -82,6 +82,13 @@ pub fn PyModule(comptime root: type) type {
 
             const pymod = ffi.PyImport_ExecCodeModuleEx(module_nameZ.ptr, pycode, filenameZ.ptr) orelse return PyError.PyRaised;
             return .{ .obj = .{ .py = pymod } };
+        }
+
+        /// Call a method on this object with the given args and kwargs.
+        pub fn call(self: *const Self, comptime T: type, method: []const u8, args: anytype, kwargs: anytype) !T {
+            const meth = try self.obj.get(method);
+            defer meth.decref();
+            return py.call(root, T, meth, args, kwargs);
         }
     };
 }

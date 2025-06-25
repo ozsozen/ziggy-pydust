@@ -247,7 +247,7 @@ fn PyExc(comptime root: type, comptime name: [:0]const u8) type {
             return raise(message);
         }
 
-        inline fn asPyObject() py.PyObject(root) {
+        inline fn asPyObject() py.PyObject {
             return .{ .py = @field(ffi, "PyExc_" ++ name) };
         }
 
@@ -274,6 +274,9 @@ fn PyExc(comptime root: type, comptime name: [:0]const u8) type {
                 // Skip the first frame (this function) and the last frame (the trampoline entrypoint)
                 for (0..st.index) |idx| {
                     // std.debug.writeStackTrace subtracts 1 from the address - not sure why, but it gives accurate frames.
+                    if (st.instruction_addresses[idx] == 0) {
+                        continue; // Skip empty addresses
+                    }
                     const address = st.instruction_addresses[idx] - 1;
 
                     // If we can't find info for the stack frame, then we skip this frame..
@@ -307,7 +310,7 @@ fn PyExc(comptime root: type, comptime name: [:0]const u8) type {
                     const fake_module = try py.PyModule(root).fromCode(code, line_info.file_name, symbol_info.compile_unit_name);
                     defer fake_module.obj.decref();
 
-                    _ = fake_module.obj.call(void, symbol_info.name, .{}, .{}) catch null;
+                    _ = fake_module.call(void, symbol_info.name, .{}, .{}) catch null;
 
                     // Grab our forced exception info.
                     // We can ignore qtype and qvalue, we just want to get the traceback object.
@@ -320,7 +323,7 @@ fn PyExc(comptime root: type, comptime name: [:0]const u8) type {
                     std.debug.assert(qtraceback != null);
 
                     // Extract the traceback frame by calling into Python (Pytraceback isn't part of the Stable API)
-                    const pytb = py.PyObject(root){ .py = qtraceback.? };
+                    const pytb = py.PyObject{ .py = qtraceback.? };
                     const frame = (try pytb.get("tb_frame")).py;
 
                     // Restore the original exception, augment it with the new frame, then fetch the new exception.
