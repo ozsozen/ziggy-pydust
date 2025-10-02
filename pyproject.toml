@@ -112,3 +112,7 @@ root = "example/operators.zig"
 [[tool.pydust.ext_module]]
 name = "example.code"
 root = "example/code.zig"
+
+[[tool.pydust.ext_module]]
+name = "example.udp_bus"
+root = "example/udp_bus.zig"
